@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load intelin_filter %}
+{% block content %}
+<div class="container my-3">
+    <!-- message 표시 -->
+    {% if messages %}
+    <div class="alert alert-danger my-3" role="alert">
+    {% for message in messages %}
+        <strong>{{ message.tags }}</strong>
+        <ul><li>{{ message.message }}</li></ul>
+    {% endfor %}
+    </div>
+    {% endif %}
+    <!-- What is role? What is tags?-->
+    <!-- 주장 -->
+    <h2 class="border-bottom py-2">{{ argument.subject }}</h2>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text">{{ argument.content|mark }}</div>
+            <div class="d-flex justify-content-end">
+                {% if argument.modify_date %}
+            <div class="badge bg-light text-dark p-2 text-start mx-3">
+                <div class="mb-2">modified at</div>
+                <div>{{ argument.modify_date }}</div>
+            </div>
+            {% endif %}
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">{{ argument.author.username }}</div>
+                    <div>{{ argument.create_date }}</div>
+                </div>
+            </div>
+            <div class="my-3">
+            <a href="javascript:void(0)" data-uri="{% url 'intelin:argument_vote' argument.id  %}"
+               class="recommend btn btn-sm btn-outline-secondary"> 기합
+                <span class="badge rounded-pill bg-success">{{argument.voter.count}}</span>
+            </a>
+            {% if request.user == argument.author %}
+            <a href="{% url 'intelin:argument_modify' argument.id  %}"
+               class="btn btn-sm btn-outline-secondary">찐빠</a>
+                <a href="javascript:void(0)" class="delete btn btn-sm btn-outline-secondary"
+       data-uri="{% url 'intelin:argument_delete' argument.id %}">기열</a>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- 반박 -->
+    <h5 class="border-bottom my-3 py-2">{{argument.refute_set.count}}개의 반박이 있습니다.</h5>
+    {% for refute in argument.refute_set.all %}
+        <a id="refute_{{ refute.id }}"></a>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text">{{ refute.content|mark }}</div>
+            <div class="d-flex justify-content-end">
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">{{ refute.author.username }}</div>
+                    <div>{{ refute.create_date }}</div>
+                </div>
+            </div>
+            <div class="my-3">
+            <a href="javascript:void(0)" data-uri="{% url 'intelin:refute_vote' refute.id  %}"
+               class="recommend btn btn-sm btn-outline-secondary"> 기합
+                <span class="badge rounded-pill bg-success">{{refute.voter.count}}</span>
+            </a>
+            {% if request.user == refute.author %}
+            <a href="{% url 'intelin:refute_modify' refute.id  %}"
+               class="btn btn-sm btn-outline-secondary">번복</a>
+            <a href="javascript:void(0)" class="delete btn btn-sm btn-outline-secondary "
+               data-uri="{% url 'intelin:refute_delete' refute.id  %}">기열</a>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <!-- 반박 등록 -->
+    <form action="{% url 'intelin:refute_create' argument.id %}" method="post" class="my-3">
+        {% csrf_token %}
+        {% include "form_errors.html" %}
+        <div class="mb-3">
+            <label for="content" class="form-label">답변내용</label>
+            <textarea {% if not user.is_authenticated %}disabled{% endif %}
+              name="content" id="content" class="form-control" rows="10"></textarea>
+        </div>
+        <input type="submit" value="답변등록" class="btn btn-primary">
+    </form>
+</div>
+{% endblock %}
+{% block script %}
+<script type='text/javascript'>
+const delete_elements = document.getElementsByClassName("delete");
+Array.from(delete_elements).forEach(function(element) {
+    element.addEventListener('click', function() {
+        if(confirm("정말로 기열하려던 것이 맞나?")) {
+            location.href = this.dataset.uri;
+        };
+    });
+});
+const recommend_elements = document.getElementsByClassName("recommend");
+Array.from(recommend_elements).forEach(function(element) {
+    element.addEventListener('click', function() {
+        if(confirm("정말로 기합하려던 것이 맞나?")) {
+            location.href = this.dataset.uri;
+        };
+    });
+});
+</script>
+{% endblock %}
